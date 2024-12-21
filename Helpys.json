@@ -1,0 +1,20 @@
+{
+    "Neon Helpy": {
+        "position": {
+            "x": 10,
+            "y": 50,
+            "z": 30
+        },
+        "rotation": 5,
+        "state": "idle"
+    },
+    "totheskies Helpy": {
+        "position": {
+            "x": 1,
+            "y": 2,
+            "z": 3
+        },
+        "rotation": 4,
+        "state": "mining"
+    }
+}

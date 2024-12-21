@@ -18,3 +18,18 @@ window.onload = function() {
         document.body.classList.add('dark-mode');
     }
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    const eventSource = new EventSource('/sse');
+
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        // Assuming you have an element with id 'jsonDisplay' to show the data
+        document.getElementById('jsonDisplay').textContent = JSON.stringify(data, null, 2);
+    };
+
+    eventSource.onerror = function(error) {
+        console.error('Error with SSE:', error);
+        eventSource.close();  // Close the connection on error
+    };
+});

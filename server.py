@@ -1,90 +1,107 @@
-from http.server import SimpleHTTPRequestHandler, HTTPServer
+from flask import Flask, send_from_directory, jsonify, request, render_template, Response
 import os
 import json
 import time
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
 HOSTNAME = os.getenv('HOSTNAME')
 SERVER_PORT = int(os.getenv('SERVER_PORT'))
 
-class MyServer(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        print("GET request received for path:", self.path)
-        if self.path == "/":  # Serve the main HTML file
-            self.serve_file("templates/index.html", "text/html")
-        elif self.path.startswith("/static/"):  # Serve static files
-            file_path = self.path.lstrip("/")
-            if file_path.endswith(".js"):
-                self.serve_file(file_path, "application/javascript")
-            elif file_path.endswith(".css"):
-                self.serve_file(file_path, "text/css")
-            elif file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')):  # Serve image files
-                self.serve_file(file_path, "image/jpeg" if file_path.endswith(".jpg") or file_path.endswith(".jpeg") else "image/png" if file_path.endswith(".png") else "image/gif")
-            else:
-                self.send_error(404, "File not found")
-        elif self.path == "/sse":  # Handle SSE
-            self.handle_sse()
-        else:
-            self.send_error(404, "File not found")
+app = Flask(__name__)
 
-    def serve_file(self, file_path, content_type):
-        try:
-            file_path = os.path.join(os.getcwd(), file_path)  # Ensure absolute path
-            with open(file_path, "rb") as file:
-                self.send_response(200)
-                self.send_header("Content-type", content_type)
-                self.end_headers()
-                self.wfile.write(file.read())
-        except FileNotFoundError:
-            self.send_error(404, "File not found")
+HELPYS_JSON_PATH = 'Helpys.json'  # Path to the JSON file
 
-    def handle_sse(self):
+# In-memory list to track clients connected via SSE
+clients = []
+
+def load_json_data():
+    """Load data from the Helpys.json file."""
+    try:
+        with open(HELPYS_JSON_PATH, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        print(f"File not found: {HELPYS_JSON_PATH}")
+        return {}
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from {HELPYS_JSON_PATH}")
+        return {}
+
+def save_json_data(data):
+    """Save updated data to Helpys.json."""
+    try:
+        with open(HELPYS_JSON_PATH, 'w') as file:
+            json.dump(data, file, indent=4)
+    except Exception as e:
+        print(f"Error saving JSON data: {e}")
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    file_extension = filename.split('.')[-1].lower()
+    content_type = {
+        'js': 'application/javascript',
+        'css': 'text/css',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif'
+    }.get(file_extension, 'application/octet-stream')
+
+    try:
+        return send_from_directory(os.getcwd(), filename, mimetype=content_type)
+    except FileNotFoundError:
+        return "File not found", 404
+
+@app.route('/sse')
+def sse():
+    def generate():
         print("SSE connection established.")
-        self.send_response(200)
-        self.send_header("Content-type", "text/event-stream")
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("Connection", "keep-alive")
-        self.end_headers()
+        # Add this client to the list of connected clients
+        clients.append(request)
 
         try:
             while True:
-                # Example: send updates (e.g., JSON list of movement data)
-                event_data = json.dumps({"movement": "example_data"})
-                self.wfile.write(f"data: {event_data}\n\n".encode('utf-8'))
-                self.wfile.flush()
-                time.sleep(1)  # Adjust the sleep interval as needed
-        except BrokenPipeError:
-            print("SSE connection closed by the client.")
+                data = load_json_data()  # Read from Helpys.json file
+                event_data = json.dumps(data)
+                yield f"data: {event_data}\n\n"
+                time.sleep(1)  # Simulate sending updates every second
+        except GeneratorExit:
+            # Remove the client when it disconnects
+            print("SSE client disconnected.")
+            clients.remove(request)
 
-    def do_POST(self):
-        print("A POST request was sent.")
-        content_length = int(self.headers['Content-Length'])
-        post_data_bytes = self.rfile.read(content_length)
-        post_data_str = post_data_bytes.decode('utf-8')
-        print(f"Received POST data: {post_data_str}")
+    return Response(generate(), content_type='text/event-stream', status=200)
 
-        try:
-            data = json.loads(post_data_str)  # Parse JSON data
-            print(f"Parsed POST data: {data}")
-        except json.JSONDecodeError:
-            print("Error decoding JSON")
 
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
+@app.route('/get_json')
+def get_json():
+    data = load_json_data()  # Load data from Helpys.json file
+    return jsonify(data)
+
+@app.route('/update_json', methods=['POST'])
+def update_json():
+    print("Received POST data to update JSON.")
+    content = request.get_json()  # Get JSON data from the request
+
+    if content:
+        print(f"Content received: {content}")  # This will show what was received
+
+        data = load_json_data()  # Load the current data from Helpys.json
+        data.update(content)  # Assuming the content is a dictionary with keys to update
+
+        save_json_data(data)  # Save the updated data back to Helpys.json
+
+        return jsonify({'status': 'success', 'message': 'JSON updated'}), 200
+    else:
+        print("Invalid data received.")
+        return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
+
+
 
 if __name__ == "__main__":
-    webServer = HTTPServer((HOSTNAME, SERVER_PORT), MyServer)
-    print(f"Server started http://{HOSTNAME}:{SERVER_PORT}")
-
-    try:
-        webServer.serve_forever()
-    except KeyboardInterrupt:
-        pass
-
-    webServer.server_close()
-    print("Server stopped.")
+    app.run(host=HOSTNAME, port=SERVER_PORT, debug=True)

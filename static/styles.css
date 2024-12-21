@@ -6,43 +6,74 @@ body {
     background-color: #f4f4f9;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    flex-direction: column;
     height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease; /* Synchronized transition for both background and text */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Add transitions for color */
 }
 
 .container {
-    display: flex; /* Ensure the container is using flexbox */
-    align-items: center; /* Vertically center the content */
-    justify-content: flex-start; /* Align items horizontally to the start */
-    padding: 0px 30px 10px 30px; /* Keep original padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
     max-width: 700px;
     width: 100%;
     box-sizing: border-box;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    text-align: left; /* Align text to the left */
-    margin-top: 50px;
+    text-align: left;
+    margin-bottom: 30px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Add transition for container */
 }
 
 .content {
     flex: 1;
     text-align: left;
-    margin-right: 20px; /* Spacing between text and image */
+    margin-right: 20px;
 }
 
 h1 {
     font-size: 2.5em;
     color: #333;
     margin-bottom: 20px;
-    transition: color 0.3s ease; /* Ensures text color fades with the container */
+    transition: color 0.3s ease; /* Transition for heading */
 }
 
 p {
     font-size: 1.1em;
     color: #555;
-    transition: color 0.3s ease; /* Ensures text color fades with the container */
+    transition: color 0.3s ease; /* Transition for paragraph */
+}
+
+/* JSON container styles */
+.json-display-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.json-container {
+    max-width: 700px;
+    width: 100%;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Transition for JSON container */
+}
+
+pre {
+    background-color: #f8f8f8;
+    padding: 10px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Transition for JSON content */
 }
 
 /* Dark Mode */
@@ -58,6 +89,16 @@ body.dark-mode .container {
 
 body.dark-mode h1, body.dark-mode p {
     color: #ddd;
+}
+
+body.dark-mode .json-container {
+    background-color: #444;
+    color: #fff;
+}
+
+body.dark-mode .json-container pre {
+    background-color: #333;
+    color: #fff;
 }
 
 /* Dark Mode toggle button */
@@ -81,9 +122,9 @@ body.dark-mode .dark-mode-toggle {
 }
 
 .container img {
-    max-width: 250px; /* Adjust the width to your preference */
-    height: auto; /* Maintain aspect ratio */
-    border-radius: 8px; /* Rounded corners */
-    margin-left: 20px; /* Add space between the text and image */
-    margin-right: 0; /* Ensure no right margin */
+    max-width: 250px;
+    height: auto;
+    border-radius: 8px;
+    margin-left: 20px;
+    margin-right: 0;
 }
