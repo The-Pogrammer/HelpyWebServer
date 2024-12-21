@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Server</title>
+    <title>Helpy Tracker</title>
     <link rel="stylesheet" href="/static/styles.css">
     <script src="/static/main.js" defer></script>
 </head>
 <body>
-    <h1>Control Panel</h1>
-    <button id="upButton">Go Up!</button>
-    <button id="downButton">Go Down!</button>
+    <div class="container">
+        <div class="content">
+            <h1>What is a "Helpy?"</h1>
+            <p>
+                In all my Minecraft worlds that use ComputerCraft/CC:Tweaked, I have a turtle (robot) named "Helpy." It's always a pink turtle with
+                a name of "Helpy," and it generally just helps out. I'm making this web server that all the Helpys will connect to so I can see
+                the state of all of them.
+            </p>
+        </div>
+        <img src="/static/images/helpy.jpg" alt="Image of Helpy in a grass field">
+    </div>
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙</button>
 </body>
 </html>
