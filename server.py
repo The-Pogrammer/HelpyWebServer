@@ -3,6 +3,8 @@ import os
 import json
 import time
 from dotenv import load_dotenv
+from apscheduler.schedulers.background import BackgroundScheduler
+import datetime
 
 load_dotenv()
 
@@ -35,6 +37,44 @@ def save_json_data(data):
             json.dump(data, file, indent=4)
     except Exception as e:
         print(f"Error saving JSON data: {e}")
+
+def cleanup_old_entries():
+    """Remove entries older than 30 days from Helpys.json."""
+    print("Running JSON cleanup...")
+    data = load_json_data()
+    if not data:
+        print("No data to clean.")
+        return
+
+    # Get the current date
+    current_date = datetime.datetime.now()
+
+    # Iterate over the entries and remove those older than 30 days
+    keys_to_remove = []
+    for key, value in data.items():
+        try:
+            last_seen_date = datetime.datetime.strptime(value['LastSeen'], "%d/%m/%Y")
+            if (current_date - last_seen_date).days > 30:
+                keys_to_remove.append(key)
+        except (KeyError, ValueError):
+            print(f"Invalid or missing LastSeen date for {key}.")
+
+    for key in keys_to_remove:
+        print(f"Removing outdated entry: {key}")
+        del data[key]
+
+    save_json_data(data)
+
+# Initialize the scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(cleanup_old_entries, 'interval', days=1)
+scheduler.start()
+cleanup_old_entries()
+@app.teardown_appcontext
+def shutdown_scheduler(exception=None):
+    if scheduler.running:
+        scheduler.shutdown(wait=False)
+        print("Scheduler shut down gracefully.")
 
 @app.route('/')
 def index():
