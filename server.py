@@ -70,6 +70,7 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(cleanup_old_entries, 'interval', days=1)
 scheduler.start()
 cleanup_old_entries()
+
 @app.teardown_appcontext
 def shutdown_scheduler(exception=None):
     if scheduler.running:
@@ -96,29 +97,30 @@ def static_files(filename):
         return send_from_directory(os.getcwd(), filename, mimetype=content_type)
     except FileNotFoundError:
         return "File not found", 404
+
 @app.route('/sse')
 def sse():
     def generate():
         print("SSE connection established.")
-        clients.append(request)
+        
+        # Create a response object for this client
+        def event_stream():
+            while True:
+                data = load_json_data()  # Read from Helpys.json file
+                event_data = json.dumps(data)
+                yield f"data: {event_data}\n\n"
+                time.sleep(1)  # Simulate sending updates every second
 
-        # Send the current data immediately when the client connects
-        data = load_json_data()  # Read the current data from Helpys.json
-        event_data = json.dumps(data)
-        yield f"data: {event_data}\n\n"  # Send the current data to the client immediately
+        # Add this generator to the list of connected clients
+        clients.append(event_stream)
 
         try:
-            while True:
-                # Block waiting for updates triggered by update_json route
-                # This will keep the connection open without sending anything until data changes
-                time.sleep(1)
+            return Response(event_stream(), content_type='text/event-stream')
         except GeneratorExit:
             print("SSE client disconnected.")
-            clients.remove(request)
+            clients.remove(event_stream)
 
-    return Response(generate(), content_type='text/event-stream', status=200)
-
-
+    return generate()
 
 @app.route('/get_json')
 def get_json():
@@ -146,19 +148,10 @@ def update_json():
         
         save_json_data(data)  # Save the updated data back to Helpys.json
 
-        # Notify clients with the updated data
-        for client in clients:
-            try:
-                event_data = json.dumps(data)
-                client.response.write(f"data: {event_data}\n\n")
-            except Exception as e:
-                print(f"Error sending data to client: {e}")
-
         return jsonify({'status': 'success', 'message': 'JSON updated'}), 200
     else:
         print("Invalid data received.")
         return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
-
 
 if __name__ == "__main__":
     app.run(host=HOSTNAME, port=SERVER_PORT, debug=True)
