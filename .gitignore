@@ -1,2 +1,2 @@
-# Ignore .env to prevent exposing sensitive information
 .env
+Helpys.json
