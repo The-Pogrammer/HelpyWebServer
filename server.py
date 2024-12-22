@@ -101,17 +101,18 @@ def static_files(filename):
 def sse():
     def generate():
         print("SSE connection established.")
-        # Add this client to the list of connected clients
         clients.append(request)
+
+        # Send the current data immediately when the client connects
+        data = load_json_data()  # Read the current data from Helpys.json
+        event_data = json.dumps(data)
+        yield f"data: {event_data}\n\n"  # Send the current data to the client
 
         try:
             while True:
-                data = load_json_data()  # Read from Helpys.json file
-                event_data = json.dumps(data)
-                yield f"data: {event_data}\n\n"
-                time.sleep(1)  # Simulate sending updates every second
+                # Block waiting for updates triggered by update_json route
+                yield  # This will keep the connection open
         except GeneratorExit:
-            # Remove the client when it disconnects
             print("SSE client disconnected.")
             clients.remove(request)
 
@@ -123,6 +124,7 @@ def get_json():
     data = load_json_data()  # Load data from Helpys.json file
     return jsonify(data)
 
+
 @app.route('/update_json', methods=['POST'])
 def update_json():
     print("Received POST data to update JSON.")
@@ -131,16 +133,30 @@ def update_json():
     if content:
         print(f"Content received: {content}")  # This will show what was received
 
+         # Add "LastSeen" to each section in the content
+        for key in content:
+            if isinstance(content[key], dict):  # Ensure the section is a dictionary
+                content[key]["LastSeen"] = datetime.datetime.now().strftime("%d/%m/%Y")
+
+        print(f"Content updated: {content}")
+
         data = load_json_data()  # Load the current data from Helpys.json
         data.update(content)  # Assuming the content is a dictionary with keys to update
-
+        
         save_json_data(data)  # Save the updated data back to Helpys.json
+
+        # Notify clients with the updated data
+        for client in clients:
+            try:
+                event_data = json.dumps(data)
+                client.response.write(f"data: {event_data}\n\n")
+            except Exception as e:
+                print(f"Error sending data to client: {e}")
 
         return jsonify({'status': 'success', 'message': 'JSON updated'}), 200
     else:
         print("Invalid data received.")
         return jsonify({'status': 'error', 'message': 'Invalid data'}), 400
-
 
 
 if __name__ == "__main__":

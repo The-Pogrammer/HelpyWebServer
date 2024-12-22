@@ -10,5 +10,17 @@
         },
         "state": "idle",
         "LastSeen": "22/12/2024"
+    },
+    "new Helpy": {
+        "transform": {
+            "position": {
+                "x": 10,
+                "y": 50,
+                "z": 30
+            },
+            "rotation": 5
+        },
+        "state": "idle",
+        "LastSeen": "22/12/2024"
     }
 }

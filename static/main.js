@@ -21,11 +21,34 @@ window.onload = function() {
 
 document.addEventListener("DOMContentLoaded", function() {
     const eventSource = new EventSource('/sse');
-
+    
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        // Assuming you have an element with id 'jsonDisplay' to show the data
-        document.getElementById('jsonDisplay').textContent = JSON.stringify(data, null, 2);
+
+        // Get the container to hold all the helpy cards
+        const helpyCardsContainer = document.getElementById('helpyCardsContainer');
+        helpyCardsContainer.innerHTML = ''; // Clear existing cards before adding new ones
+
+        // Loop through each Helpy and create a card for it
+        for (const helpyName in data) {
+            const helpyData = data[helpyName];
+            
+            // Create card element
+            const card = document.createElement('div');
+            card.classList.add('helpy-card');
+            
+            // Add card content
+            card.innerHTML = `
+                <h3>${helpyName}</h3>
+                <p><strong>State:</strong> ${helpyData.state}</p>
+                <p><strong>Last Seen:</strong> ${helpyData.LastSeen}</p>
+                <p><strong>Position:</strong> X: ${helpyData.transform.position.x}, Y: ${helpyData.transform.position.y}, Z: ${helpyData.transform.position.z}</p>
+                <p><strong>Rotation:</strong> ${helpyData.transform.rotation}°</p>
+            `;
+            
+            // Append the card to the container
+            helpyCardsContainer.appendChild(card);
+        }
     };
 
     eventSource.onerror = function(error) {
