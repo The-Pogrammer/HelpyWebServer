@@ -96,7 +96,6 @@ def static_files(filename):
         return send_from_directory(os.getcwd(), filename, mimetype=content_type)
     except FileNotFoundError:
         return "File not found", 404
-
 @app.route('/sse')
 def sse():
     def generate():
@@ -106,17 +105,19 @@ def sse():
         # Send the current data immediately when the client connects
         data = load_json_data()  # Read the current data from Helpys.json
         event_data = json.dumps(data)
-        yield f"data: {event_data}\n\n"  # Send the current data to the client
+        yield f"data: {event_data}\n\n"  # Send the current data to the client immediately
 
         try:
             while True:
                 # Block waiting for updates triggered by update_json route
-                yield  # This will keep the connection open
+                # This will keep the connection open without sending anything until data changes
+                time.sleep(1)
         except GeneratorExit:
             print("SSE client disconnected.")
             clients.remove(request)
 
     return Response(generate(), content_type='text/event-stream', status=200)
+
 
 
 @app.route('/get_json')

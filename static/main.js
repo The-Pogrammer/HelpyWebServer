@@ -33,6 +33,26 @@ document.addEventListener("DOMContentLoaded", function() {
         for (const helpyName in data) {
             const helpyData = data[helpyName];
             
+            // Determine the direction based on rotation
+            let rotationDirection = '';
+            switch (helpyData.transform.rotation) {
+                case 0:
+                    rotationDirection = 'North';
+                    break;
+                case 1:
+                    rotationDirection = 'East';
+                    break;
+                case 2:
+                    rotationDirection = 'South';
+                    break;
+                case 3:
+                    rotationDirection = 'West';
+                    break;
+                default:
+                    rotationDirection = 'toward the 4th dimension'; // Easter egg for unexpected rotation values
+                    break;
+            }
+            
             // Create card element
             const card = document.createElement('div');
             card.classList.add('helpy-card');
@@ -41,9 +61,9 @@ document.addEventListener("DOMContentLoaded", function() {
             card.innerHTML = `
                 <h3>${helpyName}</h3>
                 <p><strong>State:</strong> ${helpyData.state}</p>
+                <p><strong>World Position:</strong> X: ${helpyData.transform.position.x}, Y: ${helpyData.transform.position.y}, Z: ${helpyData.transform.position.z}</p>
+                <p><strong>Facing:</strong> ${rotationDirection}</p>
                 <p><strong>Last Seen:</strong> ${helpyData.LastSeen}</p>
-                <p><strong>Position:</strong> X: ${helpyData.transform.position.x}, Y: ${helpyData.transform.position.y}, Z: ${helpyData.transform.position.z}</p>
-                <p><strong>Rotation:</strong> ${helpyData.transform.rotation}°</p>
             `;
             
             // Append the card to the container
